@@ -122,13 +122,21 @@ class HeaterToolWindowFactory : ToolWindowFactory, DumbAware {
                         val path = project.basePath ?: ""
                         val file = editor?.virtualFile?.path ?: ""
                         val content = editor?.document?.text ?: ""
-                        val js = "window.postMessage({ type: 'chatContextResponse', workspacePath: '$path', activeFile: '$file', activeFileContent: `${content.replace("`", "\\`")}` }, '*');"
+                        val js =
+                            "window.postMessage({ type: 'chatContextResponse', workspacePath: '$path', activeFile: '$file', activeFileContent: `${
+                                content.replace(
+                                    "`",
+                                    "\\`"
+                                )
+                            }` }, '*');"
                         browser.cefBrowser.executeJavaScript(js, browser.cefBrowser.url, 0)
                     }
+
                     "toggleAutoComplete" -> {
                         val value = data["value"] as? Boolean ?: false
                         HeaterSettings.instance.state.autoCompleteEnabled = value
                     }
+
                     "changeExtLang" -> {
                         val lang = data["lang"] as? String ?: "en"
                         HeaterSettings.instance.state.language = lang
@@ -140,7 +148,13 @@ class HeaterToolWindowFactory : ToolWindowFactory, DumbAware {
                     val path = project.basePath ?: ""
                     val file = editor?.virtualFile?.path ?: ""
                     val content = editor?.document?.text ?: ""
-                    val js = "window.postMessage({ type: 'chatContextResponse', workspacePath: '$path', activeFile: '$file', activeFileContent: `${content.replace("`", "\\`")}` }, '*');"
+                    val js =
+                        "window.postMessage({ type: 'chatContextResponse', workspacePath: '$path', activeFile: '$file', activeFileContent: `${
+                            content.replace(
+                                "`",
+                                "\\`"
+                            )
+                        }` }, '*');"
                     browser.cefBrowser.executeJavaScript(js, browser.cefBrowser.url, 0)
                 }
             }
@@ -183,13 +197,25 @@ class HeaterToolWindowFactory : ToolWindowFactory, DumbAware {
             getResourceFileAsString("/webview/codicon.css")
         }
 
-        val fontBytes = getResourceFileAsBytes("/webview/codicon.ttf")
+        var fontBytes = getResourceFileAsBytes("/webview/codicon.ttf")
+        if (fontBytes.isEmpty()) {
+            fontBytes = getResourceFileAsBytes("/codicon.ttf")
+        }
+
         if (fontBytes.isNotEmpty()) {
             val fontBase64 = Base64.getEncoder().encodeToString(fontBytes)
-            codiconCss = codiconCss.replace(
-                Regex("""url\(['"]?(\.\/)?codicon\.ttf['"]?\)"""),
-                "url(\"data:font/truetype;charset=utf-8;base64,$fontBase64\")"
-            )
+            val embeddedFontFace = """
+                @font-face {
+                    font-family: "codicon";
+                    src: url("data:font/truetype;charset=utf-8;base64,$fontBase64") format("truetype");
+                    font-weight: normal;
+                    font-style: normal;
+                }
+            """.trimIndent()
+
+            // CSS içindeki eski @font-face bloğunu temizle ve yenisini en başa ekle
+            codiconCss = codiconCss.replace(Regex("""@font-face\s*\{[^}]*\}"""), "")
+            codiconCss = "$embeddedFontFace\n$codiconCss"
         }
 
         val injectedHead = buildString {
@@ -212,13 +238,17 @@ class HeaterToolWindowFactory : ToolWindowFactory, DumbAware {
     }
 
     private fun getResourceFileAsString(path: String): String {
-        val inputStream = javaClass.getResourceAsStream(path) ?: return ""
-        return InputStreamReader(inputStream, Charsets.UTF_8).readText()
+        val stream = javaClass.getResourceAsStream(path)
+            ?: javaClass.classLoader?.getResourceAsStream(path.removePrefix("/"))
+            ?: return ""
+        return InputStreamReader(stream, Charsets.UTF_8).readText()
     }
 
     private fun getResourceFileAsBytes(path: String): ByteArray {
-        val inputStream = javaClass.getResourceAsStream(path) ?: return ByteArray(0)
-        return inputStream.use { it.readBytes() }
+        val stream = javaClass.getResourceAsStream(path)
+            ?: javaClass.classLoader?.getResourceAsStream(path.removePrefix("/"))
+            ?: return ByteArray(0)
+        return stream.use { it.readBytes() }
     }
 }
 
