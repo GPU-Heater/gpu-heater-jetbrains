@@ -42,4 +42,10 @@ tasks {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
+    patchPluginXml {
+        val readmeFile = project.rootProject.file("README.md")
+        if (readmeFile.exists()) {
+            pluginDescription.set(readmeFile.readText())
+        }
+    }
 }

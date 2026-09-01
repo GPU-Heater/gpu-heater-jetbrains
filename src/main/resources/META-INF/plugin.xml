@@ -9,6 +9,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="GPU-Heater"
                     anchor="right"
+                    icon="/icon/icon.png"
                     factoryClass="gpu.Heater.coder.HeaterToolWindowFactory"/>
 
         <applicationService serviceImplementation="gpu.Heater.coder.HeaterSettings"/>

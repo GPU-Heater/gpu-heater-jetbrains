@@ -44,6 +44,7 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextField
 import kotlin.collections.get
+import java.util.Base64
 
 @State(name = "HeaterSettings", storages = [Storage("HeaterSettings.xml")])
 class HeaterSettings : PersistentStateComponent<HeaterSettings.State> {
@@ -157,11 +158,6 @@ class HeaterToolWindowFactory : ToolWindowFactory, DumbAware {
                     window.acquireVsCodeApi = function() { return window.vscode; };
                 """
                 cefBrowser.executeJavaScript(injectCode, cefBrowser.url, 0)
-
-                val langJson = getResourceFileAsString("/webview/lang.json")
-                if (langJson.isNotEmpty()) {
-                    cefBrowser.executeJavaScript("window.i18nData = $langJson;", cefBrowser.url, 0)
-                }
             }
         }, browser.cefBrowser)
 
@@ -177,19 +173,52 @@ class HeaterToolWindowFactory : ToolWindowFactory, DumbAware {
     }
 
     private fun buildHtmlContent(): String {
-        val htmlContent = getResourceFileAsString("/webview/ui.html")
+        var htmlContent = getResourceFileAsString("/webview/ui.html")
         if (htmlContent.isEmpty()) return ""
 
         val apiBase = HeaterSettings.instance.state.apiBaseUrl
+        val langJson = getResourceFileAsString("/webview/lang.json").ifEmpty { "{}" }
+        val markedJs = getResourceFileAsString("/webview/marked.min.js")
+        var codiconCss = getResourceFileAsString("/webview/codicon.min.css").ifEmpty {
+            getResourceFileAsString("/webview/codicon.css")
+        }
 
-        val apiScript = "<script>const API_BASE = '$apiBase';</script>"
+        val fontBytes = getResourceFileAsBytes("/webview/codicon.ttf")
+        if (fontBytes.isNotEmpty()) {
+            val fontBase64 = Base64.getEncoder().encodeToString(fontBytes)
+            codiconCss = codiconCss.replace(
+                Regex("""url\(['"]?(\.\/)?codicon\.ttf['"]?\)"""),
+                "url(\"data:font/truetype;charset=utf-8;base64,$fontBase64\")"
+            )
+        }
 
-        return htmlContent.replace("<head>", "<head>\n    $apiScript")
+        val injectedHead = buildString {
+            append("\n    <script>\n")
+            append("        const API_BASE = '$apiBase';\n")
+            append("        window.i18nData = $langJson;\n")
+            append("    </script>\n")
+            if (codiconCss.isNotEmpty()) {
+                append("    <style>\n$codiconCss\n    </style>\n")
+            }
+            if (markedJs.isNotEmpty()) {
+                append("    <script>\n$markedJs\n    </script>\n")
+            }
+        }
+
+        htmlContent = htmlContent.replace(Regex("""<link[^>]*href=["'][^"']*codicon[^"']*["'][^>]*>"""), "")
+        htmlContent = htmlContent.replace(Regex("""<script[^>]*src=["'][^"']*marked[^"']*["'][^>]*></script>"""), "")
+
+        return htmlContent.replace("<head>", "<head>$injectedHead")
     }
 
     private fun getResourceFileAsString(path: String): String {
         val inputStream = javaClass.getResourceAsStream(path) ?: return ""
         return InputStreamReader(inputStream, Charsets.UTF_8).readText()
+    }
+
+    private fun getResourceFileAsBytes(path: String): ByteArray {
+        val inputStream = javaClass.getResourceAsStream(path) ?: return ByteArray(0)
+        return inputStream.use { it.readBytes() }
     }
 }
 

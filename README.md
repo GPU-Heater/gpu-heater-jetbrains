@@ -28,6 +28,13 @@ To connect the plugin to your backend:
 *   **JCEF (Java Chromium Embedded Framework)** support must be enabled in your IDE to render the tool window UI.
 *   An active **GPU-Heater backend server** running at the configured API URL to process LLM requests.
 
+
+## 📥 Installation
+*  Download this ZIP from Releases
+*  Open Settings Menu then Plugins Option
+*  Click gear (right of Installed) and click "Install Plugin from Disk"
+*  Select gpu-heater-jetbrains.zip from Downloads
+
 ## 🛠️ Usage
 
 *   **Auto-Complete**: Simply start typing. If enabled, ghost text will appear. Press the designated key (usually Tab) to accept.
