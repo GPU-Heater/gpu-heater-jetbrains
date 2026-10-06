@@ -1,0 +1,40 @@
+<idea-plugin>
+    <id>gpu.heater.coder</id>
+    <name>GPU-Heater Coder</name>
+    <vendor>GPU-Heater</vendor>
+    <description>GPU-Heater Code Assistant &amp; Architect</description>
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.jcef</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="GPU-Heater"
+                    anchor="right"
+                    icon="/icon/icon.png"
+                    factoryClass="gpu.Heater.coder.HeaterToolWindowFactory"/>
+
+        <applicationService serviceImplementation="gpu.Heater.coder.HeaterSettings"/>
+        <applicationConfigurable parentId="tools"
+                                 instance="gpu.Heater.coder.HeaterConfigurable"
+                                 id="ai.heater.coder.settings"
+                                 displayName="GPU-Heater AI"/>
+
+        <editorFactoryDocumentListener implementation="gpu.Heater.coder.HeaterFimListener"/>
+    </extensions>
+
+    <actions>
+        <group id="GPUHeaterEditorGroup" text="GPU-Heater" popup="true">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+            <action id="GPUHeater.FixError" class="gpu.Heater.coder.EditorAction" text="Fix Error / Debug" description="Fix error with AI"/>
+            <action id="GPUHeater.Refactor" class="gpu.Heater.coder.EditorAction" text="Refactor Code" description="Refactor with AI"/>
+            <action id="GPUHeater.Explain" class="gpu.Heater.coder.EditorAction" text="Explain Code" description="Explain code with AI"/>
+            <action id="GPUHeater.Tests" class="gpu.Heater.coder.EditorAction" text="Generate Tests" description="Generate tests with AI"/>
+            <separator/>
+            <action id="GPUHeater.TrainSnippet" class="gpu.Heater.coder.TrainSnippetAction" text="Train with Selection" description="Send snippet to vector DB"/>
+        </group>
+
+        <group id="GPUHeaterProjectGroup" text="GPU-Heater">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+            <action id="GPUHeater.InspectFolder" class="gpu.Heater.coder.InspectFolderAction" text="Inspect Workspace / Folder"/>
+        </group>
+    </actions>
+</idea-plugin>
